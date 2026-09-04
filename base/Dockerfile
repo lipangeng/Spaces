@@ -109,9 +109,12 @@ RUN set -eux; \
     install -d -o space -g space -m 0755 \
         /home/space \
         /home/space/.cache \
+        /home/space/.config \
         /home/space/.config/fish \
         /home/space/.config/mise \
+        /home/space/.local \
         /home/space/.local/bin \
+        /home/space/.local/share \
         /home/space/.local/share/mise \
         /workspace \
         /entrypoint.d/user

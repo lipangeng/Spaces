@@ -9,10 +9,10 @@
 #   /workspace         工作成果和项目文件
 #   /entrypoint.d/user 用户维护的启动 hooks
 #
-# SPACE_FIX_PERMISSIONS 默认为 true。启用时，本脚本检查这三个挂载根目录，并把
-# 不属于 space:space 的根目录修复为 space:space；关闭时只创建缺失目录，不修改
-# 已有挂载点。修复不递归处理已有内容，也不使用 chmod，避免改动 bind mount 在
-# 宿主机上的文件 ownership、脚本可执行位或 SSH 私钥权限。
+# SPACE_FIX_PERMISSIONS 默认为 true。启用时，本脚本检查三个持久化根目录
+# 和 HOME 中由镜像管理的三个目录骨架，并把不属于 space:space 的目录修复为
+# space:space；关闭时只创建缺失目录，不修改已有目录。修复不递归处理已有
+# 内容，也不使用 chmod，避免改动 bind mount 在宿主机上的其他文件。
 
 set -Eeuo pipefail
 
@@ -75,18 +75,28 @@ install -d -o root -g root -m 0755 /entrypoint.d/system
 for directory in \
   /home/space \
   /home/space/.cache \
+  /home/space/.config \
   /home/space/.config/fish \
   /home/space/.config/mise \
+  /home/space/.local \
   /home/space/.local/bin \
+  /home/space/.local/share \
   /home/space/.local/share/mise \
   /workspace \
   /entrypoint.d/user; do
   ensure_space_directory "${directory}"
 done
 
-# 只修复正式定义的三个持久化根目录，不扫描或修改其已有子项。
+# 除三个持久化根目录外，只修复 HOME 中会被 install -d 隐式创建的
+# 标准中间目录。列表是有限的，不会递归扫描或修改其他用户内容。
 if permission_fix_enabled; then
-  for directory in /home/space /workspace /entrypoint.d/user; do
+  for directory in \
+    /home/space \
+    /home/space/.config \
+    /home/space/.local \
+    /home/space/.local/share \
+    /workspace \
+    /entrypoint.d/user; do
     fix_persistent_directory_ownership "${directory}"
   done
 else
