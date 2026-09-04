@@ -4,9 +4,16 @@
 
 `agent-space` is a generic persistent Linux workspace for AI agents. It inherits the complete runtime contract from [`space-base`](../base/README.md) without binding the image to Codex, OpenCode, or another agent product.
 
-## Current scope
+## Built-in capabilities
 
-The initial image intentionally adds no packages or startup behavior beyond `space-base`. It establishes a stable image name and extension point while allowing each deployment to select its agent, runtime, credentials, and command independently.
+`agent-space` is a generic Agent bootstrap environment. It includes:
+
+- Build-time-pinned Node.js LTS and the latest stable Python.
+- `ripgrep`, `file`, SQLite, Git LFS, rsync, and Poppler PDF tools.
+- MarkItDown with PDF, DOCX, PPTX, and XLSX support.
+- `chrome-devtools-mcp` for connecting to an external Chrome browser.
+
+Exact runtime and tool versions are recorded in `/etc/spaces/agent-runtime.env`. The image does not upgrade them at startup, and it does not include Chrome, Pandoc, LibreOffice, OCR, FFmpeg, or a complete compiler toolchain. Add advanced capabilities at runtime when needed.
 
 Use the inherited facilities for customization:
 
@@ -14,6 +21,22 @@ Use the inherited facilities for customization:
 - `/workspace` for repositories and agent work products.
 - `/entrypoint.d/user` for persistent user provisioning.
 - `CMD`, Compose `command`, or Kubernetes `command` and `args` to select the agent process.
+
+## Built-in Agent Skills
+
+The image stores its built-in Skills under `/etc/spaces/skills`. On startup, the system hook creates this namespace link when the target does not already exist:
+
+```text
+/home/space/.agents/skills/space -> /etc/spaces/skills
+```
+
+The `space` directory is a namespace and may contain Skills at deeper directory levels:
+
+- [`space-environment`](rootfs/etc/spaces/skills/space-environment/SKILL.md) describes the container, persistence, mise, and software layout.
+- [`chrome-devtools`](rootfs/etc/spaces/skills/chrome-devtools/SKILL.md) covers external Chrome CDP/MCP connections.
+- [`document-conversion`](rootfs/etc/spaces/skills/document-conversion/SKILL.md) covers local document text extraction.
+
+Existing files, directories, and links are never replaced. A conflicting target is reported and preserved. Set `SPACE_LINK_AGENT_SKILLS=false` to disable automatic linking; link failures are reported without blocking container startup.
 
 ## Build
 
@@ -38,6 +61,16 @@ docker build \
   ./agent
 ```
 
+The following build arguments control bootstrap tool selection. Their defaults
+are resolved to exact versions during the build and recorded in the image:
+
+| Argument | Default | Meaning |
+| --- | --- | --- |
+| `NODE_VERSION` | `lts` | Current Node.js LTS line or an explicit version |
+| `PYTHON_VERSION` | `latest` | Latest stable Python or an explicit version |
+| `MARKITDOWN_VERSION` | `latest` | MarkItDown package version |
+| `CHROME_DEVTOOLS_MCP_VERSION` | `latest` | Chrome DevTools MCP package version |
+
 ## Run
 
 Start the inherited Bash command with persistent storage:
@@ -60,8 +93,8 @@ docker run --rm -it \
   your-agent-command
 ```
 
-`agent-space` does not prescribe how credentials are supplied. Use the secret mechanism provided by the deployment platform, limit credential scope, and avoid baking credentials into the image or user hooks.
+`agent-space` does not prescribe how credentials are supplied. Use the secret mechanism provided by the deployment platform, limit credential scope, and avoid baking credentials into the image, repository, or persistent user hooks.
 
 ## Extension boundary
 
-Add image-level dependencies only when they are required by every supported agent. Prefer mise or `/home/space/.local` for replaceable agent CLIs and runtimes. See the [base documentation](../base/README.md) for entrypoint switches, hook semantics, persistence, and permission handling.
+Image-level dependencies are limited to high-frequency, generic, or bootstrap capabilities. Prefer mise or `/home/space/.local` for replaceable agent CLIs and project runtimes; these user paths have higher PATH precedence than the built-in runtimes. See the [base documentation](../base/README.md) for entrypoint switches, hook semantics, persistence, and permission handling.

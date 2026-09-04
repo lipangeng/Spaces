@@ -10,9 +10,11 @@ Spaces 是一套基于 Docker 的标准化、可持久化、可扩展隔离工�
 | --- | --- | --- |
 | [`space-base`](base/README.zh-CN.md) | 已实现 | 公共 Debian 环境、用户模型、持久化路径、mise 和 entrypoint 框架 |
 | [`manual-space`](manual/README.zh-CN.md) | 已初始化 | 面向人工操作的通用工作空间，不绑定具体 IDE |
-| [`agent-space`](agent/README.zh-CN.md) | 已初始化 | 面向 AI Agent 的通用工作空间，不绑定具体 Agent 产品 |
+| [`agent-space`](agent/README.zh-CN.md) | 可用 | 内置常用 Runtime 和工具的通用 Agent bootstrap 工作空间 |
 
-两个派生镜像目前有意保持最小化，只建立独立的镜像入口并完整继承 `space-base`；具体工具继续作为用户级扩展安装。
+两个派生镜像都保持产品中立，并完整继承 `space-base` 契约。
+`agent-space` 只增加通用 bootstrap Runtime 和工具；具体 IDE 和 Agent 产品
+仍作为用户级扩展安装。
 
 ## 设计原则
 
@@ -112,7 +114,8 @@ Spaces 定位为个人隔离工作空间，因此 `space` 用户拥有 passwordl
 ├── agent/
 │   ├── Dockerfile
 │   ├── README.md
-│   └── README.zh-CN.md
+│   ├── README.zh-CN.md
+│   └── rootfs/
 ├── base/
 │   ├── Dockerfile
 │   ├── README.md

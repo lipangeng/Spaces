@@ -10,9 +10,11 @@ Spaces is a Docker-based foundation for standardized, persistent, and extensible
 | --- | --- | --- |
 | [`space-base`](base/README.md) | Available | Shared Debian environment, user model, persistence paths, mise, and entrypoint framework |
 | [`manual-space`](manual/README.md) | Initialized | Generic workspace operated by a human; not tied to a particular IDE |
-| [`agent-space`](agent/README.md) | Initialized | Generic workspace for AI agents; not tied to a particular agent product |
+| [`agent-space`](agent/README.md) | Available | Generic Agent bootstrap workspace with common runtimes and tools |
 
-The two derived images are intentionally minimal: they establish independent image entry points while inheriting the complete `space-base` contract. Specific tools remain user-managed extensions.
+Both derived images remain product-neutral and inherit the complete `space-base`
+contract. `agent-space` adds only generic bootstrap runtimes and tools; specific
+IDEs and Agent products remain user-managed extensions.
 
 ## Design principles
 
@@ -112,7 +114,8 @@ The `space` user has passwordless sudo because Spaces is designed as a personal 
 ├── agent/
 │   ├── Dockerfile
 │   ├── README.md
-│   └── README.zh-CN.md
+│   ├── README.zh-CN.md
+│   └── rootfs/
 ├── base/
 │   ├── Dockerfile
 │   ├── README.md
