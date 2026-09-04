@@ -9,10 +9,10 @@ Spaces 是一套基于 Docker 的标准化、可持久化、可扩展隔离工�
 | 组件 | 状态 | 作用 |
 | --- | --- | --- |
 | [`space-base`](base/README.zh-CN.md) | 已实现 | 公共 Debian 环境、用户模型、持久化路径、mise 和 entrypoint 框架 |
-| `manual-space` | 规划中 | 面向人工操作的通用工作空间，不绑定具体 IDE |
-| `agent-space` | 规划中 | 面向 AI Agent 的通用工作空间，不绑定具体 Agent 产品 |
+| [`manual-space`](manual/README.zh-CN.md) | 已初始化 | 面向人工操作的通用工作空间，不绑定具体 IDE |
+| [`agent-space`](agent/README.zh-CN.md) | 已初始化 | 面向 AI Agent 的通用工作空间，不绑定具体 Agent 产品 |
 
-当前仓库仅实现了 `space-base`。
+两个派生镜像目前有意保持最小化，只建立独立的镜像入口并完整继承 `space-base`；具体工具继续作为用户级扩展安装。
 
 ## 设计原则
 
@@ -48,11 +48,21 @@ tini
 
 ## 快速开始
 
-构建基础镜像：
+构建分为两个阶段：先构建 Base，再把它的精确镜像引用传给两个派生镜像：
 
 ```bash
-docker build -t space-base:local ./base
+SPACE_VERSION=1.0.0
+BASE_IMAGE="ghcr.io/lipangeng/space-base:${SPACE_VERSION}"
+docker build -t "${BASE_IMAGE}" ./base
+docker build \
+  --build-arg SPACE_BASE_IMAGE="${BASE_IMAGE}" \
+  -t "ghcr.io/lipangeng/manual-space:${SPACE_VERSION}" ./manual
+docker build \
+  --build-arg SPACE_BASE_IMAGE="${BASE_IMAGE}" \
+  -t "ghcr.io/lipangeng/agent-space:${SPACE_VERSION}" ./agent
 ```
+
+GitHub Actions 中应使用 Docker Metadata Action 生成各镜像的标准名称和标签。第一阶段发布 Base 后，把其 digest 引用作为 `SPACE_BASE_IMAGE` 传给第二阶段；派生 Dockerfile 不猜测或默认使用任何 tag。
 
 启动一个交互式持久化工作空间：
 
@@ -61,7 +71,7 @@ docker run --rm -it \
   -v space-home:/home/space \
   -v "$(pwd)":/workspace \
   -v space-user-hooks:/entrypoint.d/user \
-  space-base:local
+  ghcr.io/lipangeng/manual-space:1.0.0
 ```
 
 默认命令是 `bash`。可以通过 Docker、Compose 或 Kubernetes 传入其他命令，启动 IDE、终端、Notebook、Agent 或其他常驻进程。
@@ -90,11 +100,19 @@ Spaces 定位为个人隔离工作空间，因此 `space` 用户拥有 passwordl
 .
 ├── README.md
 ├── README.zh-CN.md
-└── base/
+├── agent/
+│   ├── Dockerfile
+│   ├── README.md
+│   └── README.zh-CN.md
+├── base/
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── README.zh-CN.md
+│   └── rootfs/
+└── manual/
     ├── Dockerfile
     ├── README.md
-    ├── README.zh-CN.md
-    └── rootfs/
+    └── README.zh-CN.md
 ```
 
 软件清单、构建参数、hook 语义、环境开关和详细示例见 [`base/README.zh-CN.md`](base/README.zh-CN.md)。

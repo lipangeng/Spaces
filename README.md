@@ -9,10 +9,10 @@ Spaces is a Docker-based foundation for standardized, persistent, and extensible
 | Component | Status | Purpose |
 | --- | --- | --- |
 | [`space-base`](base/README.md) | Available | Shared Debian environment, user model, persistence paths, mise, and entrypoint framework |
-| `manual-space` | Planned | Generic workspace operated by a human; not tied to a particular IDE |
-| `agent-space` | Planned | Generic workspace for AI agents; not tied to a particular agent product |
+| [`manual-space`](manual/README.md) | Initialized | Generic workspace operated by a human; not tied to a particular IDE |
+| [`agent-space`](agent/README.md) | Initialized | Generic workspace for AI agents; not tied to a particular agent product |
 
-Only `space-base` is currently implemented in this repository.
+The two derived images are intentionally minimal: they establish independent image entry points while inheriting the complete `space-base` contract. Specific tools remain user-managed extensions.
 
 ## Design principles
 
@@ -48,11 +48,21 @@ The user switch can be disabled when the caller needs to preserve an explicitly 
 
 ## Quick start
 
-Build the base image:
+The build has two stages: build Base first, then pass its exact image reference to both derived images:
 
 ```bash
-docker build -t space-base:local ./base
+SPACE_VERSION=1.0.0
+BASE_IMAGE="ghcr.io/lipangeng/space-base:${SPACE_VERSION}"
+docker build -t "${BASE_IMAGE}" ./base
+docker build \
+  --build-arg SPACE_BASE_IMAGE="${BASE_IMAGE}" \
+  -t "ghcr.io/lipangeng/manual-space:${SPACE_VERSION}" ./manual
+docker build \
+  --build-arg SPACE_BASE_IMAGE="${BASE_IMAGE}" \
+  -t "ghcr.io/lipangeng/agent-space:${SPACE_VERSION}" ./agent
 ```
+
+In GitHub Actions, Docker Metadata Action should generate the standard names and tags for each image. After the first stage publishes Base, pass its digest reference to the second stage as `SPACE_BASE_IMAGE`; the derived Dockerfiles do not guess or default to any tag.
 
 Start an interactive persistent workspace:
 
@@ -61,7 +71,7 @@ docker run --rm -it \
   -v space-home:/home/space \
   -v "$(pwd)":/workspace \
   -v space-user-hooks:/entrypoint.d/user \
-  space-base:local
+  ghcr.io/lipangeng/manual-space:1.0.0
 ```
 
 The default command is `bash`. Supply a different command through Docker, Compose, or Kubernetes to start an IDE, terminal, notebook, agent, or other long-running process.
@@ -90,11 +100,19 @@ The `space` user has passwordless sudo because Spaces is designed as a personal 
 .
 ├── README.md
 ├── README.zh-CN.md
-└── base/
+├── agent/
+│   ├── Dockerfile
+│   ├── README.md
+│   └── README.zh-CN.md
+├── base/
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── README.zh-CN.md
+│   └── rootfs/
+└── manual/
     ├── Dockerfile
     ├── README.md
-    ├── README.zh-CN.md
-    └── rootfs/
+    └── README.zh-CN.md
 ```
 
 For package inventory, build arguments, hook semantics, environment switches, and detailed examples, see [`base/README.md`](base/README.md).
