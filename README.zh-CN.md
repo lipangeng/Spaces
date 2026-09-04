@@ -1,0 +1,100 @@
+# Spaces
+
+[English](README.md)
+
+Spaces 是一套基于 Docker 的标准化、可持久化、可扩展隔离工作空间基础。它定义稳定的 Linux 运行环境和生命周期约定，同时把 IDE、语言 Runtime 和 Agent 保留为用户自行管理的扩展。
+
+## 项目状态
+
+| 组件 | 状态 | 作用 |
+| --- | --- | --- |
+| [`space-base`](base/README.zh-CN.md) | 已实现 | 公共 Debian 环境、用户模型、持久化路径、mise 和 entrypoint 框架 |
+| `manual-space` | 规划中 | 面向人工操作的通用工作空间，不绑定具体 IDE |
+| `agent-space` | 规划中 | 面向 AI Agent 的通用工作空间，不绑定具体 Agent 产品 |
+
+当前仓库仅实现了 `space-base`。
+
+## 设计原则
+
+- 基础镜像保持通用、稳定和易维护。
+- 用户状态与工作成果独立于 Container Writable Layer 持久化。
+- Provisioning 与 Execution 分离：hooks 负责准备环境，`CMD` 负责启动应用。
+- 明确区分 system hooks 与 user hooks 的身份和执行语义。
+- 用户软件优先安装到 `/home/space`，Runtime 优先交给 mise 管理。
+- 基础镜像不预装或绑定具体 IDE、语言 Runtime 或 AI Agent。
+- 把 Container 到 Host 视为主要安全边界。
+
+## 运行模型
+
+镜像定义统一的 `space` 用户和三个持久化边界：
+
+```text
+/home/space        用户工具、Runtime、配置和应用数据
+/workspace         源代码与其他工作成果
+/entrypoint.d/user 持久化的用户初始化脚本
+```
+
+容器按以下顺序启动：
+
+```text
+tini
+  └─ entrypoint 使用配置的启动身份
+       ├─ system hooks 使用启动身份
+       ├─ user hooks 默认使用 space
+       └─ 最终命令默认使用 space
+```
+
+如果调用方需要保留显式指定的容器用户，可以关闭用户切换。准确的行为约定见 [基础镜像说明](base/README.zh-CN.md)。
+
+## 快速开始
+
+构建基础镜像：
+
+```bash
+docker build -t space-base:local ./base
+```
+
+启动一个交互式持久化工作空间：
+
+```bash
+docker run --rm -it \
+  -v space-home:/home/space \
+  -v "$(pwd)":/workspace \
+  -v space-user-hooks:/entrypoint.d/user \
+  space-base:local
+```
+
+默认命令是 `bash`。可以通过 Docker、Compose 或 Kubernetes 传入其他命令，启动 IDE、终端、Notebook、Agent 或其他常驻进程。
+
+## 扩展 Space
+
+建议遵循以下职责划分：
+
+```text
+语言 Runtime 和兼容 CLI         mise
+用户应用和可执行程序             /home/space/.local
+项目数据与项目级 mise 配置       /workspace
+持久化的系统级初始化             /entrypoint.d/user 中显式使用 sudo
+应用启动                         CMD / command / args
+```
+
+因此镜像可以安全替换：使用新版镜像 recreate 容器，再重新挂载三个持久化路径，即可恢复用户环境和工作区。
+
+## 安全边界
+
+Spaces 定位为个人隔离工作空间，因此 `space` 用户拥有 passwordless sudo。除非明确需要，不要向容器暴露宿主机权限，尤其应避免 privileged、Host PID、宿主机根目录挂载、不必要的 capabilities，以及在不了解影响时挂载宿主机 Docker socket。
+
+## 仓库结构
+
+```text
+.
+├── README.md
+├── README.zh-CN.md
+└── base/
+    ├── Dockerfile
+    ├── README.md
+    ├── README.zh-CN.md
+    └── rootfs/
+```
+
+软件清单、构建参数、hook 语义、环境开关和详细示例见 [`base/README.zh-CN.md`](base/README.zh-CN.md)。
