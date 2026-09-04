@@ -66,9 +66,9 @@ GitHub Actions 中应使用 Docker Metadata Action 生成各镜像的标准名�
 
 ## 发布流程
 
-[`release.yml`](.github/workflows/release.yml) 在 `main` 更新时使用 Conventional Commits 维护 Release PR，并在每次运行中调用 [`publish-images.yml`](.github/workflows/publish-images.yml)。普通提交发布 `main` 和 `sha-*` 镜像；合并 Release PR 后，Release Please 创建 Git tag 和 GitHub Release，该次运行发布 SemVer 和 `sha-*` 镜像。镜像工作流始终先发布 Base，再使用其 digest 并行构建两个派生镜像。
+[`publish-images.yml`](.github/workflows/publish-images.yml) 在 `main` 更新时发布 `main` 和 `sha-*` 镜像。推送符合 `v*` 的 SemVer 标签时，发布对应的版本、major/minor 别名、`latest` 和 `sha-*` 镜像。版本标签和 GitHub Release 由人工创建，不依赖自动发布管理工具。
 
-镜像工作流也支持推送 `v*` 标签或手动指定已有 SemVer 标签，用于不经过 Release Please 的发布或重新构建。
+镜像工作流始终先发布 Base，再使用其 digest 并行构建两个派生镜像，也可以针对所选分支或标签手动运行。
 
 启动一个交互式持久化工作空间：
 
@@ -108,8 +108,7 @@ Spaces 定位为个人隔离工作空间，因此 `space` 用户拥有 passwordl
 ├── README.zh-CN.md
 ├── .github/
 │   └── workflows/
-│       ├── publish-images.yml
-│       └── release.yml
+│       └── publish-images.yml
 ├── agent/
 │   ├── Dockerfile
 │   ├── README.md

@@ -66,9 +66,9 @@ In GitHub Actions, Docker Metadata Action should generate the standard names and
 
 ## Release flow
 
-[`release.yml`](.github/workflows/release.yml) uses Conventional Commits to maintain a Release PR whenever `main` changes and calls [`publish-images.yml`](.github/workflows/publish-images.yml) on every run. Ordinary commits publish `main` and `sha-*` images. After the Release PR is merged, Release Please creates the Git tag and GitHub Release, and that run publishes SemVer and `sha-*` images. The image workflow always publishes Base first and then builds both derived images in parallel from its digest.
+[`publish-images.yml`](.github/workflows/publish-images.yml) publishes `main` and `sha-*` images whenever `main` changes. Pushing a `v*` SemVer tag publishes the corresponding version, major/minor aliases, `latest`, and `sha-*` images. Version tags and GitHub Releases are created manually; no automatic release manager is required.
 
-The image workflow also accepts a pushed `v*` tag or a manually selected existing SemVer tag for releases or rebuilds that do not go through Release Please.
+The workflow always publishes Base first and then builds both derived images in parallel from its digest. It can also be started manually for the selected branch or tag.
 
 Start an interactive persistent workspace:
 
@@ -108,8 +108,7 @@ The `space` user has passwordless sudo because Spaces is designed as a personal 
 ├── README.zh-CN.md
 ├── .github/
 │   └── workflows/
-│       ├── publish-images.yml
-│       └── release.yml
+│       └── publish-images.yml
 ├── agent/
 │   ├── Dockerfile
 │   ├── README.md

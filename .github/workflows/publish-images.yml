@@ -2,21 +2,11 @@ name: Build and publish images
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
-  workflow_call:
-    inputs:
-      release_tag:
-        description: SemVer Git tag created for this run; empty for a branch build
-        required: false
-        default: ""
-        type: string
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: Existing SemVer Git tag to build and publish
-        required: true
-        type: string
 
 # GITHUB_TOKEN 只需要读取仓库和发布 GHCR package。
 permissions:
@@ -38,8 +28,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -55,15 +43,13 @@ jobs:
         id: metadata
         uses: docker/metadata-action@v6
         with:
-          # 使用 checkout 后的 Git 状态，确保手动发布其他 tag 时 sha 标签也对应
-          # release_tag，而不是 workflow_dispatch 页面所在分支的提交。
           context: git
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/space-base
           tags: |
-            type=ref,event=branch,enable=${{ inputs.release_tag == '' }}
-            type=semver,pattern={{version}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
-            type=semver,pattern={{major}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ (inputs.release_tag != '' || github.ref_type == 'tag') && !startsWith(inputs.release_tag || github.ref_name, 'v0.') && !startsWith(inputs.release_tag || github.ref_name, '0.') }}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha
 
       - name: Build and push space-base
@@ -105,8 +91,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -125,10 +109,10 @@ jobs:
           context: git
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.space }}-space
           tags: |
-            type=ref,event=branch,enable=${{ inputs.release_tag == '' }}
-            type=semver,pattern={{version}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
-            type=semver,pattern={{major}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ (inputs.release_tag != '' || github.ref_type == 'tag') && !startsWith(inputs.release_tag || github.ref_name, 'v0.') && !startsWith(inputs.release_tag || github.ref_name, '0.') }}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha
 
       - name: Build and push ${{ matrix.space }}-space
