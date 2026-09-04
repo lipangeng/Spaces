@@ -147,6 +147,7 @@ chmod +x entrypoint.d/user/20-ffmpeg.sh
 | 变量 | 默认值 | 行为 |
 | --- | --- | --- |
 | `SPACE_USER_SWITCH` | `true` | user hooks 和最终命令以 `space` 运行；设为 false 时保留实际启动身份与环境 |
+| `SPACE_FIX_PERMISSIONS` | `true` | 将三个持久化根目录的属主和属组修复为 `space:space`；设为 false 时不修改已有挂载点 |
 | `SKIP_SYSTEM_ENTRYPOINT` | `false` | 跳过全部 system hooks |
 | `SKIP_USER_ENTRYPOINT` | `false` | 跳过全部 user hooks |
 | `HIDE_ENTRYPOINT_ARGS` | `false` | 最终命令日志只显示可执行文件，不打印完整参数 |
@@ -162,6 +163,8 @@ LOGNAME=space
 如果实际启动身份不能切换用户，`gosu` 会失败并终止启动，不会静默回退到其他身份。
 
 当 `SPACE_USER_SWITCH=false` 时，entrypoint 不调用 `gosu`，并保留调用方的 UID、GID、`HOME`、`USER` 和 `LOGNAME`。调用方需要自行保证目录权限，并判断 system hooks 是否可以完成。
+
+`SPACE_FIX_PERMISSIONS` 检查 `/home/space`、`/workspace` 和 `/entrypoint.d/user`，用于处理 Docker volume 或 bind mount 覆盖镜像目录后产生的挂载点属主差异。修复只调整这三个根目录自身的属主和属组，不改变 mode，也不递归修改已有内容。挂载中已有文件的权限应通过匹配 `SPACE_UID`、`SPACE_GID` 或宿主机权限来保证。
 
 ## Shell 与 mise 集成
 

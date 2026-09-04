@@ -147,6 +147,7 @@ All boolean values accept `1/0`, `true/false`, `yes/no`, or `on/off`, case-insen
 | Variable | Default | Behavior |
 | --- | --- | --- |
 | `SPACE_USER_SWITCH` | `true` | Run user hooks and the final command as `space`; when false, preserve the startup identity and environment |
+| `SPACE_FIX_PERMISSIONS` | `true` | Set the owner and group of the three persistent root directories to `space:space`; when false, leave existing mount points unchanged |
 | `SKIP_SYSTEM_ENTRYPOINT` | `false` | Skip all system hooks |
 | `SKIP_USER_ENTRYPOINT` | `false` | Skip all user hooks |
 | `HIDE_ENTRYPOINT_ARGS` | `false` | Log only the executable name instead of the complete final command |
@@ -162,6 +163,8 @@ LOGNAME=space
 If the startup identity cannot switch users, `gosu` fails and startup stops. There is no silent fallback to a different identity.
 
 When `SPACE_USER_SWITCH=false`, the entrypoint does not call `gosu` and preserves the caller's UID, GID, `HOME`, `USER`, and `LOGNAME`. The caller remains responsible for directory permissions and for deciding whether system hooks can complete.
+
+`SPACE_FIX_PERMISSIONS` checks `/home/space`, `/workspace`, and `/entrypoint.d/user` to handle mount-point ownership differences introduced when Docker volumes or bind mounts replace image directories. It changes the owner and group of those three root directories only, preserves their modes, and does not modify existing contents recursively. Access to existing mounted files must be provided by matching `SPACE_UID` and `SPACE_GID` or by configuring host permissions.
 
 ## Shell and mise integration
 

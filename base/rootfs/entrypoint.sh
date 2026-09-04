@@ -12,6 +12,7 @@
 # 可选控制变量：
 #
 #   SPACE_USER_SWITCH       是否将 user hooks 和主进程切换为 space，默认 true
+#   SPACE_FIX_PERMISSIONS   是否修复三个持久化目录的 ownership，默认 true
 #   SKIP_SYSTEM_ENTRYPOINT  是否跳过 system hooks，默认 false
 #   SKIP_USER_ENTRYPOINT    是否跳过 user hooks，默认 false
 #   HIDE_ENTRYPOINT_ARGS    是否隐藏启动日志中的命令参数，默认 false
@@ -239,6 +240,7 @@ main() {
   local run_user
 
   validate_boolean SPACE_USER_SWITCH "${SPACE_USER_SWITCH:-}"
+  validate_boolean SPACE_FIX_PERMISSIONS "${SPACE_FIX_PERMISSIONS:-}"
   validate_boolean SKIP_SYSTEM_ENTRYPOINT "${SKIP_SYSTEM_ENTRYPOINT:-}"
   validate_boolean SKIP_USER_ENTRYPOINT "${SKIP_USER_ENTRYPOINT:-}"
   validate_boolean HIDE_ENTRYPOINT_ARGS "${HIDE_ENTRYPOINT_ARGS:-}"
