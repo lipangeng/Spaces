@@ -1,0 +1,4 @@
+# Bash login shell 读取 ~/.profile，并进一步加载交互配置。
+if [ -n "${BASH_VERSION:-}" ] && [ -r "${HOME}/.bashrc" ]; then
+  . "${HOME}/.bashrc"
+fi

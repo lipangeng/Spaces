@@ -1,0 +1,4 @@
+# 用户可在本文件中添加自己的 Zsh 配置；公共逻辑由镜像统一维护。
+if [ -r /etc/spaces/shell/zsh.zsh ]; then
+  source /etc/spaces/shell/zsh.zsh
+fi
