@@ -1,0 +1,145 @@
+name: Build and publish images
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_call:
+    inputs:
+      release_tag:
+        description: SemVer Git tag created for this run; empty for a branch build
+        required: false
+        default: ""
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing SemVer Git tag to build and publish
+        required: true
+        type: string
+
+# GITHUB_TOKEN 只需要读取仓库和发布 GHCR package。
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # 第一阶段先发布 Base。其 digest 会成为第二阶段唯一的基础镜像引用，派生镜像
+  # 不依赖 metadata-action 生成的某个可变 tag。
+  build_base:
+    name: Build space-base
+    runs-on: ubuntu-latest
+    outputs:
+      base_image: ${{ steps.base_reference.outputs.image }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate space-base metadata
+        id: metadata
+        uses: docker/metadata-action@v6
+        with:
+          # 使用 checkout 后的 Git 状态，确保手动发布其他 tag 时 sha 标签也对应
+          # release_tag，而不是 workflow_dispatch 页面所在分支的提交。
+          context: git
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/space-base
+          tags: |
+            type=ref,event=branch,enable=${{ inputs.release_tag == '' }}
+            type=semver,pattern={{version}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
+            type=semver,pattern={{major}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ (inputs.release_tag != '' || github.ref_type == 'tag') && !startsWith(inputs.release_tag || github.ref_name, 'v0.') && !startsWith(inputs.release_tag || github.ref_name, '0.') }}
+            type=sha
+
+      - name: Build and push space-base
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: ./base
+          push: true
+          pull: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha,scope=space-base
+          cache-to: type=gha,mode=max,scope=space-base
+
+      # metadata-action 可能生成多个 tag。这里只从首个 tag 提取其规范化后的镜像
+      # 名称，再附加构建产出的 digest，避免第二阶段依赖任何可变 tag。
+      - name: Export immutable Base reference
+        id: base_reference
+        env:
+          BASE_TAG: ${{ fromJSON(steps.metadata.outputs.json).tags[0] }}
+          BASE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          base_image="${BASE_TAG%:*}"
+          printf 'image=%s@%s\n' "${base_image}" "${BASE_DIGEST}" >> "${GITHUB_OUTPUT}"
+
+  # 第二阶段在 Base 发布成功后并行构建两种 Space。两个构建接收完全相同的
+  # SPACE_BASE_IMAGE，因此不会因 tag 移动而使用不同版本的 Base。
+  build_derived:
+    name: Build ${{ matrix.space }}-space
+    needs: build_base
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        space:
+          - manual
+          - agent
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate ${{ matrix.space }}-space metadata
+        id: metadata
+        uses: docker/metadata-action@v6
+        with:
+          context: git
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.space }}-space
+          tags: |
+            type=ref,event=branch,enable=${{ inputs.release_tag == '' }}
+            type=semver,pattern={{version}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
+            type=semver,pattern={{major}},value=${{ inputs.release_tag || github.ref_name }},enable=${{ (inputs.release_tag != '' || github.ref_type == 'tag') && !startsWith(inputs.release_tag || github.ref_name, 'v0.') && !startsWith(inputs.release_tag || github.ref_name, '0.') }}
+            type=sha
+
+      - name: Build and push ${{ matrix.space }}-space
+        uses: docker/build-push-action@v7
+        with:
+          context: ./${{ matrix.space }}
+          push: true
+          pull: true
+          build-args: |
+            SPACE_BASE_IMAGE=${{ needs.build_base.outputs.base_image }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.space }}-space
+          cache-to: type=gha,mode=max,scope=${{ matrix.space }}-space

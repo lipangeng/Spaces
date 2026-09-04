@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Release Please 维护 Release PR、CHANGELOG、版本文件、Git tag 和 GitHub Release。
+# packages:write 会传递给被调用的镜像发布 workflow。
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      # simple 类型为整个仓库维护一个 SemVer，并根据 Conventional Commits
+      # 更新 Release PR。合并该 PR 后，此步骤创建 Git tag 和 GitHub Release。
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          release-type: simple
+
+  # 每次 main 更新都构建标准镜像：普通提交的 tag_name 为空，发布 workflow
+  # 生成 main 和 sha 标签；Release Please 创建版本时则生成 SemVer 和 sha 标签。
+  # 直接调用还能避开 GITHUB_TOKEN 创建的 tag 不会触发其他 workflow 的限制。
+  publish:
+    name: Publish images
+    needs: release
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-images.yml
+    with:
+      release_tag: ${{ needs.release.outputs.tag_name }}
+    secrets: inherit

@@ -64,6 +64,12 @@ docker build \
 
 In GitHub Actions, Docker Metadata Action should generate the standard names and tags for each image. After the first stage publishes Base, pass its digest reference to the second stage as `SPACE_BASE_IMAGE`; the derived Dockerfiles do not guess or default to any tag.
 
+## Release flow
+
+[`release.yml`](.github/workflows/release.yml) uses Conventional Commits to maintain a Release PR whenever `main` changes and calls [`publish-images.yml`](.github/workflows/publish-images.yml) on every run. Ordinary commits publish `main` and `sha-*` images. After the Release PR is merged, Release Please creates the Git tag and GitHub Release, and that run publishes SemVer and `sha-*` images. The image workflow always publishes Base first and then builds both derived images in parallel from its digest.
+
+The image workflow also accepts a pushed `v*` tag or a manually selected existing SemVer tag for releases or rebuilds that do not go through Release Please.
+
 Start an interactive persistent workspace:
 
 ```bash
@@ -100,6 +106,10 @@ The `space` user has passwordless sudo because Spaces is designed as a personal 
 .
 ├── README.md
 ├── README.zh-CN.md
+├── .github/
+│   └── workflows/
+│       ├── publish-images.yml
+│       └── release.yml
 ├── agent/
 │   ├── Dockerfile
 │   ├── README.md
