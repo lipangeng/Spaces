@@ -10,6 +10,7 @@ ARG SPACE_GID=1000
 RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        lrzsz \
         7zip \
         bash \
         bash-completion \
