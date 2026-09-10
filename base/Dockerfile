@@ -96,6 +96,8 @@ RUN set -eux; \
 # HOME 和 WORKSPACE 是所有 Space 的稳定路径约定。将用户级 bin 和 mise shims
 # 放入镜像级 PATH，确保非交互 shell、CMD、IDE 和 Agent 子进程都能找到工具。
 ENV WORKSPACE=/workspace \
+    TERM=xterm-256color \
+    COLORTERM=truecolor \
     PATH="/home/space/.local/bin:/home/space/.local/share/mise/shims:$PATH"
 
 # rootfs 提供统一 entrypoint、镜像管理的 system hooks，以及 `/etc/spaces`
