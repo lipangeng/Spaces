@@ -164,7 +164,7 @@ LOGNAME=space
 
 当 `SPACE_USER_SWITCH=false` 时，entrypoint 不调用 `gosu`，并保留调用方的 UID、GID、`HOME`、`USER` 和 `LOGNAME`。调用方需要自行保证目录权限，并判断 system hooks 是否可以完成。
 
-`SPACE_FIX_PERMISSIONS` 检查 `/home/space`、`/workspace` 和 `/entrypoint.d/user`，用于处理 Docker volume 或 bind mount 覆盖镜像目录后产生的挂载点属主差异。同时检查镜像管理的 HOME 目录骨架 `/home/space/.config`、`/home/space/.local` 和 `/home/space/.local/share`，以及新增的 `/home/space/.config/spaces`、其 `shell` 目录和三个 Shell 配置子目录，因为这些中间路径否则可能由 root 隐式创建。修复只调整明确列出的目录，不改变 mode，也不递归修改已有内容。其他挂载文件的权限应通过匹配 `SPACE_UID`、`SPACE_GID` 或宿主机权限来保证。
+`SPACE_FIX_PERMISSIONS` 检查 `/home/space`、`/workspace` 和 `/entrypoint.d/user`，用于处理 Docker volume 或 bind mount 覆盖镜像目录后产生的挂载点属主差异。同时检查镜像管理的 HOME 目录骨架 `/home/space/.config`、`/home/space/.local` 和 `/home/space/.local/share`，以及 `/home/space/.config/bash.d`、`/home/space/.config/zsh.d` 和 `/home/space/.config/fish.d`，因为这些中间路径否则可能由 root 隐式创建。修复只调整明确列出的目录，不改变 mode，也不递归修改已有内容。其他挂载文件的权限应通过匹配 `SPACE_UID`、`SPACE_GID` 或宿主机权限来保证。
 
 ## Shell 与 mise 集成
 
@@ -183,13 +183,13 @@ LOGNAME=space
 
 | Shell | 镜像配置目录 | 用户配置目录 | 文件后缀 |
 | --- | --- | --- | --- |
-| Bash | `/etc/spaces/shell/bash.d/` | `~/.config/spaces/shell/bash.d/` | `.sh` |
-| Zsh | `/etc/spaces/shell/zsh.d/` | `~/.config/spaces/shell/zsh.d/` | `.zsh` |
-| Fish | `/etc/spaces/shell/fish.d/` | `~/.config/spaces/shell/fish.d/` | `.fish` |
+| Bash | `/etc/spaces/shell/bash.d/` | `~/.config/bash.d/` | `.sh` |
+| Zsh | `/etc/spaces/shell/zsh.d/` | `~/.config/zsh.d/` | `.zsh` |
+| Fish | `/etc/spaces/shell/fish.d/` | `~/.config/fish.d/` | `.fish` |
 
 这些片段只在交互式 Shell 中加载，先加载镜像目录，再加载用户目录；每个目录按文件名顺序加载可读的普通文件。建议用 `10-mise.sh`、`50-my-tool.sh` 等带数字前缀的名称。片段无需执行权限，必须使用对应 Shell 的语法；不同工具仍共享当前 Shell 的环境，修改同一变量时需要协调顺序。同名用户片段不会跳过镜像片段，两者都会执行。
 
-例如，Bash 工具可把初始化命令写入 `~/.config/spaces/shell/bash.d/50-my-tool.sh`，下次启动交互式 Bash 时生效。启动脚本会创建这些用户目录。已有 rc 文件如果保留了对 `/etc/spaces/shell/bash.sh`、`zsh.zsh` 或 `fish.fish` 的加载语句，会自动使用新机制；完全自定义的 rc 需要自行添加对应入口，初始化过程不会改写已有文件。
+例如，Bash 工具可把初始化命令写入 `~/.config/bash.d/50-my-tool.sh`，下次启动交互式 Bash 时生效。启动脚本会创建这些用户目录。已有 rc 文件如果保留了对 `/etc/spaces/shell/bash.sh`、`zsh.zsh` 或 `fish.fish` 的加载语句，会自动使用新机制；完全自定义的 rc 需要自行添加对应入口，初始化过程不会改写已有文件。
 
 交互式 Bash、Zsh 和 Fish 会加载对应的 mise activation。mise shims 同时保留在镜像级 PATH 中，因此非交互进程也能使用 mise 管理的工具。
 

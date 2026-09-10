@@ -164,7 +164,7 @@ If the startup identity cannot switch users, `gosu` fails and startup stops. The
 
 When `SPACE_USER_SWITCH=false`, the entrypoint does not call `gosu` and preserves the caller's UID, GID, `HOME`, `USER`, and `LOGNAME`. The caller remains responsible for directory permissions and for deciding whether system hooks can complete.
 
-`SPACE_FIX_PERMISSIONS` checks `/home/space`, `/workspace`, and `/entrypoint.d/user` to handle mount-point ownership differences introduced when Docker volumes or bind mounts replace image directories. It also checks the image-managed HOME scaffolding at `/home/space/.config`, `/home/space/.local`, and `/home/space/.local/share`, plus `/home/space/.config/spaces`, its `shell` directory, and the three shell fragment directories, because these intermediate paths may otherwise be created as root. It changes only the explicitly listed directories, preserves their modes, and does not modify existing contents recursively. Access to other mounted files must be provided by matching `SPACE_UID` and `SPACE_GID` or by configuring host permissions.
+`SPACE_FIX_PERMISSIONS` checks `/home/space`, `/workspace`, and `/entrypoint.d/user` to handle mount-point ownership differences introduced when Docker volumes or bind mounts replace image directories. It also checks the image-managed HOME scaffolding at `/home/space/.config`, `/home/space/.local`, and `/home/space/.local/share`, plus `/home/space/.config/bash.d`, `/home/space/.config/zsh.d`, and `/home/space/.config/fish.d`, because these intermediate paths may otherwise be created as root. It changes only the explicitly listed directories, preserves their modes, and does not modify existing contents recursively. Access to other mounted files must be provided by matching `SPACE_UID` and `SPACE_GID` or by configuring host permissions.
 
 ## Shell and mise integration
 
@@ -183,13 +183,13 @@ Each tool owns a configuration fragment instead of editing `.bashrc`, `.zshrc`, 
 
 | Shell | Image configuration directory | User configuration directory | Extension |
 | --- | --- | --- | --- |
-| Bash | `/etc/spaces/shell/bash.d/` | `~/.config/spaces/shell/bash.d/` | `.sh` |
-| Zsh | `/etc/spaces/shell/zsh.d/` | `~/.config/spaces/shell/zsh.d/` | `.zsh` |
-| Fish | `/etc/spaces/shell/fish.d/` | `~/.config/spaces/shell/fish.d/` | `.fish` |
+| Bash | `/etc/spaces/shell/bash.d/` | `~/.config/bash.d/` | `.sh` |
+| Zsh | `/etc/spaces/shell/zsh.d/` | `~/.config/zsh.d/` | `.zsh` |
+| Fish | `/etc/spaces/shell/fish.d/` | `~/.config/fish.d/` | `.fish` |
 
 Fragments load only in interactive shells: image fragments first, then user fragments, with readable regular files in filename order within each directory. Use numeric prefixes such as `10-mise.sh` and `50-my-tool.sh`. Fragments need no executable permission and must use the matching shell syntax. Tools still share the shell environment, so changes to the same variable require coordinated ordering. A user fragment with the same name does not suppress the image fragment; both run.
 
-For example, a Bash tool can put its initialization commands in `~/.config/spaces/shell/bash.d/50-my-tool.sh`; they take effect in the next interactive Bash session. The startup hook creates these user directories. Existing rc files that source `/etc/spaces/shell/bash.sh`, `zsh.zsh`, or `fish.fish` automatically use the new mechanism. Fully custom rc files need to source the corresponding loader themselves; initialization never rewrites existing files.
+For example, a Bash tool can put its initialization commands in `~/.config/bash.d/50-my-tool.sh`; they take effect in the next interactive Bash session. The startup hook creates these user directories. Existing rc files that source `/etc/spaces/shell/bash.sh`, `zsh.zsh`, or `fish.fish` automatically use the new mechanism. Fully custom rc files need to source the corresponding loader themselves; initialization never rewrites existing files.
 
 Interactive Bash, Zsh, and Fish sessions load the matching mise activation script. The mise shims directory remains in the image-level PATH so tools are also available to non-interactive processes.
 

@@ -4,7 +4,7 @@ status is-interactive; or return
 # Fish 的 for 通配符允许空目录；先加载镜像配置，再加载用户配置。
 begin
     set -l config
-    for config in /etc/spaces/shell/fish.d/*.fish "$HOME"/.config/spaces/shell/fish.d/*.fish
+    for config in /etc/spaces/shell/fish.d/*.fish "$HOME"/.config/fish.d/*.fish
         if test -f "$config"; and test -r "$config"
             source "$config"
         end
