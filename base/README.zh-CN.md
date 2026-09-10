@@ -191,6 +191,18 @@ LOGNAME=space
 
 例如，Bash 工具可把初始化命令写入 `~/.config/bash.d/50-my-tool.sh`，下次启动交互式 Bash 时生效。启动脚本会创建这些用户目录。已有 rc 文件如果保留了对 `/etc/spaces/shell/bash.sh`、`zsh.zsh` 或 `fish.fish` 的加载语句，会自动使用新机制；完全自定义的 rc 需要自行添加对应入口，初始化过程不会改写已有文件。
 
+各 Shell 的 `00-defaults` 片段在 `TERM` 未设置或为空时将其设为 `xterm-256color`，否则保留原值并导出。Bash 启用 `autocd`，并在补全有多个匹配时直接显示候选列表，保留原有按键绑定。Zsh 启用 `AUTO_CD`、`ALWAYS_TO_END`、`AUTO_MENU`，关闭 `MENU_COMPLETE`。Fish 保留原生隐式 cd 和交互式补全，无需额外设置。用户片段可随后覆盖这些默认配置。
+
+历史记录默认配置：
+
+| Shell | 保存与过滤 | 多窗口行为 |
+| --- | --- | --- |
+| Bash | `~/.bash_history`；`HISTSIZE=10000`、`HISTFILESIZE=10000`（文件按行计数）；`HISTCONTROL=ignoreboth` 忽略连续重复和空格开头的命令。 | `histappend` 在退出时追加，不自动导入其他窗口的新历史。 |
+| Zsh | `~/.zsh_history`；`HISTSIZE=10000`、`SAVEHIST=10000`；忽略连续重复，空格开头的命令不持久化。 | `SHARE_HISTORY` 追加并导入同一历史文件中的命令。 |
+| Fish | 保留原生历史管理，默认存于 `$XDG_DATA_HOME/fish/fish_history`（通常为 `~/.local/share/fish/fish_history`），不套用 Bash/Zsh 的容量变量。 | 自动保存；当前会话可用 `history merge` 导入其他会话的新历史。 |
+
+三种 Shell 使用各自的历史格式，不共用历史文件。
+
 交互式 Bash、Zsh 和 Fish 会加载对应的 mise activation。mise shims 同时保留在镜像级 PATH 中，因此非交互进程也能使用 mise 管理的工具。
 
 ```bash

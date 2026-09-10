@@ -191,6 +191,18 @@ Fragments load only in interactive shells: image fragments first, then user frag
 
 For example, a Bash tool can put its initialization commands in `~/.config/bash.d/50-my-tool.sh`; they take effect in the next interactive Bash session. The startup hook creates these user directories. Existing rc files that source `/etc/spaces/shell/bash.sh`, `zsh.zsh`, or `fish.fish` automatically use the new mechanism. Fully custom rc files need to source the corresponding loader themselves; initialization never rewrites existing files.
 
+Each shell's `00-defaults` snippet sets `TERM` to `xterm-256color` when unset or empty, otherwise preserving and exporting its value. Bash enables `autocd` and immediately displays completion candidates when multiple matches exist, preserving existing key bindings. Zsh enables `AUTO_CD`, `ALWAYS_TO_END`, and `AUTO_MENU`, and disables `MENU_COMPLETE`. Fish keeps its native implicit cd and interactive completion without additional settings. Subsequent user snippets can override these defaults.
+
+History defaults:
+
+| Shell | Storage and filtering | Multiple sessions |
+| --- | --- | --- |
+| Bash | `~/.bash_history`; `HISTSIZE=10000`, `HISTFILESIZE=10000` (file limit counts lines); `HISTCONTROL=ignoreboth` ignores consecutive duplicates and commands starting with a space. | `histappend` appends on exit; it does not automatically import new history from other sessions. |
+| Zsh | `~/.zsh_history`; `HISTSIZE=10000`, `SAVEHIST=10000`; ignores consecutive duplicates and does not persist commands starting with a space. | `SHARE_HISTORY` appends and imports commands through the same history file. |
+| Fish | Keep native history management, stored by default in `$XDG_DATA_HOME/fish/fish_history` (usually `~/.local/share/fish/fish_history`), without applying Bash/Zsh capacity variables. | Saves automatically; use `history merge` to import new history from other sessions. |
+
+Each shell uses its own history format and a separate history file.
+
 Interactive Bash, Zsh, and Fish sessions load the matching mise activation script. The mise shims directory remains in the image-level PATH so tools are also available to non-interactive processes.
 
 ```bash
