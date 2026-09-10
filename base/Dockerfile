@@ -95,7 +95,10 @@ RUN set -eux; \
 
 # HOME 和 WORKSPACE 是所有 Space 的稳定路径约定。将用户级 bin 和 mise shims
 # 放入镜像级 PATH，确保非交互 shell、CMD、IDE 和 Agent 子进程都能找到工具。
+# 使用 Debian 内置的 C.UTF-8 locale，确保 Vim 等程序正确处理中文。
 ENV WORKSPACE=/workspace \
+    LANG=C.UTF-8 \
+    LC_CTYPE=C.UTF-8 \
     TERM=xterm-256color \
     COLORTERM=truecolor \
     PATH="/home/space/.local/bin:/home/space/.local/share/mise/shims:$PATH"
