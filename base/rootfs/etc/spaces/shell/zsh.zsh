@@ -1,7 +1,13 @@
-# 该文件由镜像维护，并由 space 用户的 ~/.zshrc 加载。
-# mise activation 仅适用于交互式 Zsh；其他进程依赖镜像级 shims PATH。
+# 由 ~/.zshrc 加载；各工具只需维护 zsh.d 中自己的配置文件。
 [[ -o interactive ]] || return 0
 
-if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate zsh)"
-fi
+# (N) 允许配置目录为空；每组按文件名顺序执行。
+_spaces_load_zsh_config() {
+  local config
+  for config in /etc/spaces/shell/zsh.d/*.zsh(N) "${HOME}"/.config/spaces/shell/zsh.d/*.zsh(N); do
+    [[ -f "${config}" && -r "${config}" ]] || continue
+    source "${config}"
+  done
+}
+_spaces_load_zsh_config
+unfunction _spaces_load_zsh_config

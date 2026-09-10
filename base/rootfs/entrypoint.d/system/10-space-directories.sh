@@ -10,7 +10,7 @@
 #   /entrypoint.d/user 用户维护的启动 hooks
 #
 # SPACE_FIX_PERMISSIONS 默认为 true。启用时，本脚本检查三个持久化根目录
-# 和 HOME 中由镜像管理的三个目录骨架，并把不属于 space:space 的目录修复为
+# 和 HOME 中由镜像管理的目录骨架，并把不属于 space:space 的目录修复为
 # space:space；关闭时只创建缺失目录，不修改已有目录。修复不递归处理已有
 # 内容，也不使用 chmod，避免改动 bind mount 在宿主机上的其他文件。
 
@@ -78,6 +78,11 @@ for directory in \
   /home/space/.config \
   /home/space/.config/fish \
   /home/space/.config/mise \
+  /home/space/.config/spaces \
+  /home/space/.config/spaces/shell \
+  /home/space/.config/spaces/shell/bash.d \
+  /home/space/.config/spaces/shell/zsh.d \
+  /home/space/.config/spaces/shell/fish.d \
   /home/space/.local \
   /home/space/.local/bin \
   /home/space/.local/share \
@@ -93,6 +98,11 @@ if permission_fix_enabled; then
   for directory in \
     /home/space \
     /home/space/.config \
+    /home/space/.config/spaces \
+    /home/space/.config/spaces/shell \
+    /home/space/.config/spaces/shell/bash.d \
+    /home/space/.config/spaces/shell/zsh.d \
+    /home/space/.config/spaces/shell/fish.d \
     /home/space/.local \
     /home/space/.local/share \
     /workspace \

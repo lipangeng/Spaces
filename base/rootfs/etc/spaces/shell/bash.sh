@@ -1,10 +1,16 @@
-# 该文件由镜像维护，并由 space 用户的 ~/.bashrc 加载。
-# mise activation 仅适用于交互式 Bash；其他进程依赖镜像级 shims PATH。
+# 由 ~/.bashrc 加载；各工具只需维护 bash.d 中自己的配置文件。
 case $- in
   *i*) ;;
   *) return ;;
 esac
 
-if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate bash)"
-fi
+# 先加载镜像配置，再加载用户配置；每组按文件名顺序执行。
+_spaces_load_bash_config() {
+  local config
+  for config in /etc/spaces/shell/bash.d/*.sh "${HOME}"/.config/spaces/shell/bash.d/*.sh; do
+    [[ -f "${config}" && -r "${config}" ]] || continue
+    source "${config}"
+  done
+}
+_spaces_load_bash_config
+unset -f _spaces_load_bash_config

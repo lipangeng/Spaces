@@ -112,6 +112,11 @@ RUN set -eux; \
         /home/space/.config \
         /home/space/.config/fish \
         /home/space/.config/mise \
+        /home/space/.config/spaces \
+        /home/space/.config/spaces/shell \
+        /home/space/.config/spaces/shell/bash.d \
+        /home/space/.config/spaces/shell/zsh.d \
+        /home/space/.config/spaces/shell/fish.d \
         /home/space/.local \
         /home/space/.local/bin \
         /home/space/.local/share \

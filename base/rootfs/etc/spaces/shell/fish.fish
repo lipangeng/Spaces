@@ -1,7 +1,12 @@
-# 该文件由镜像维护，并由 space 用户的 Fish 配置加载。
-# mise activation 仅适用于交互式 Fish；其他进程依赖镜像级 shims PATH。
+# 由 Fish config.fish 加载；各工具只需维护 fish.d 中自己的配置文件。
 status is-interactive; or return
 
-if type -q mise
-    mise activate fish | source
+# Fish 的 for 通配符允许空目录；先加载镜像配置，再加载用户配置。
+begin
+    set -l config
+    for config in /etc/spaces/shell/fish.d/*.fish "$HOME"/.config/spaces/shell/fish.d/*.fish
+        if test -f "$config"; and test -r "$config"
+            source "$config"
+        end
+    end
 end
